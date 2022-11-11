@@ -53,6 +53,8 @@ func myPrivateIps() string {
 	return fmt.Sprintf("%s", ips)
 }
 
+// TODO IMDS v2
+// TODO ECS の場合
 func awsAz() string {
 	resp, err := http.Get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
 	if err != nil {

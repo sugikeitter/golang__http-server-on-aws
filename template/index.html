@@ -1,10 +1,74 @@
+<!DOCTYPE html>
 <html lang="ja">
+<head>
+  <title>AWS Demo page</title>
+  <style>
+{{/*  ref: https://codepen.io/julesforrest/pen/QBzaQR  */}}
+    * {
+      font-family: sans-serif;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+      grid-gap: 2rem;
+      margin: 2rem;
+    }
+
+    .card {
+      height: 125px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    h3 {
+      color: rgb(33, 119, 218);
+      font-size: 24px;
+      margin: 20px 0 0 20px;
+    }
+
+    p {
+      color: rgb(65, 68, 83);
+      font-weight: 400;
+      font-size: 16px;
+      align-self: end;
+      margin: 0 0 20px 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .card:hover {
+      transform: scale(1.035, 1.035);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
 <body>
-  <div>現在時刻: {{.Time}}</div>
-  <div>AZ: {{.AwsAz}}</div>
-  <div>Ip: {{.PrivateIps}}</div>
-  {{if .Name -}}
-  <div>{{.Name}}さん</div>
-  {{end}}
+  <div class="container">
+    <div class="card">
+      <h3>Current Time</h3>
+      <p>{{.Time}}</p>
+    </div>
+
+    {{if .Name -}}
+      <div class="card">
+        <h3>Your Name</h3>
+        <p>{{.Name}}</p>
+      </div>
+    {{end}}
+
+    <div class="card">
+      <h3>Availability Zone</h3>
+      <p>{{.AwsAz}}</p>
+    </div>
+
+    <div class="card">
+      <h3>IP Addresses</h3>
+      <p>{{.PrivateIps}}</p>
+    </div>
 </body>
 </html>
