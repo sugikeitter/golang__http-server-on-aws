@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"net"
 	"net/http"
 	"time"
@@ -24,6 +25,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Time:       currentTime(),
 		Name:       r.FormValue("name"),
 		PrivateIps: myPrivateIps(),
+		AwsAz:      awsAz(),
 	}
 	tmpl.Execute(w, result)
 }
@@ -49,4 +51,18 @@ func myPrivateIps() string {
 		}
 	}
 	return fmt.Sprintf("%s", ips)
+}
+
+func awsAz() string {
+	resp, err := http.Get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
+	if err != nil {
+		// log
+		return "ERROR - http.get"
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "ERROR - io.ReadAll"
+	}
+	return string(body[:])
 }
