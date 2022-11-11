@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"time"
 )
@@ -11,8 +13,10 @@ var tmpl = template.Must(template.New("index.html").
 	ParseFiles("template/index.html"))
 
 type Result struct {
-	Time string
-	Name string
+	Time       string
+	Name       string
+	PrivateIps string
+	AwsAz      string
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -21,8 +25,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		name = "Nanashi"
 	}
 	result := Result{
-		Time: currentTime(),
-		Name: name,
+		Time:       currentTime(),
+		Name:       name,
+		PrivateIps: myPrivateIps(),
 	}
 	tmpl.Execute(w, result)
 }
@@ -35,4 +40,17 @@ func main() {
 func currentTime() string {
 	t := time.Now()
 	return t.Format("2006/01/02 15:04:05.000")
+}
+
+func myPrivateIps() string {
+	netInterfaceAddresses, _ := net.InterfaceAddrs()
+
+	ips := []string{}
+	for _, netInterfaceAddress := range netInterfaceAddresses {
+		networkIp, ok := netInterfaceAddress.(*net.IPNet)
+		if ok && !networkIp.IP.IsLoopback() && networkIp.IP.To4() != nil {
+			ips = append(ips, networkIp.IP.String())
+		}
+	}
+	return fmt.Sprintf("%s", ips)
 }
