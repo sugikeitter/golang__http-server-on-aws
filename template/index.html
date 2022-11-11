@@ -3,6 +3,8 @@
   <div>現在時刻: {{.Time}}</div>
 <!--  <div>AZ: {{.AwsAz}}</div>-->
   <div>Ip: {{.PrivateIps}}</div>
+  {{if .Name -}}
   <div>{{.Name}}さん</div>
+  {{end}}
 </body>
 </html>

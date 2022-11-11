@@ -20,13 +20,9 @@ type Result struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	name := r.FormValue("name")
-	if name == "" {
-		name = "Nanashi"
-	}
 	result := Result{
 		Time:       currentTime(),
-		Name:       name,
+		Name:       r.FormValue("name"),
 		PrivateIps: myPrivateIps(),
 	}
 	tmpl.Execute(w, result)
