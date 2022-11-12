@@ -50,6 +50,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func handleIcon(w http.ResponseWriter, r *http.Request) {}
 
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "OK")
+}
+
 // TODO logger
 func main() {
 	usageMsg := `Usage:
@@ -69,6 +73,7 @@ func main() {
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
+	http.HandleFunc("/health", handleHealth)
 	fmt.Println(currentTime(), "start!!")
 	http.ListenAndServe(":"+port, nil)
 }
