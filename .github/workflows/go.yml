@@ -11,7 +11,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read # actions/checkout のために必要
+  contents: write # actions/checkout/push のために必要
 
 jobs:
 
