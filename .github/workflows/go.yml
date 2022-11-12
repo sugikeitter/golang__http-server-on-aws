@@ -1,0 +1,44 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: Build
+      run: |
+        GOOS=linux GOARCH=amd64 go build -o ./bin/go-http-linux -v ./...
+        GOOS=darwin GOARCH=amd64 go build -o ./bin/go-http-mac -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Check update
+      id: check
+      run: test `git status ./bin -s | wc -l` != 0
+      continue-on-error: true
+    
+    - name: Push
+      if: steps.check.outcome == 'success'
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add ./bin
+        git commit -m "Add binary"
+        git push
