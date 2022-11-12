@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -8,12 +9,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
-var tmpl = template.Must(template.New("index.html").
-	//Parse("<html><body><div>{{.Time}}</div>{{.Name}}さん</body></html>"))
-	ParseFiles("template/index.html"))
+//go:embed template
+var f embed.FS
+var tmpl, _ = template.ParseFS(f, "template/index.html")
 
 var privateIps = myPrivateIps()
 var awsAz = awsAzFromMetadata()
@@ -50,10 +52,25 @@ func handleIcon(w http.ResponseWriter, r *http.Request) {}
 
 // TODO logger
 func main() {
+	usageMsg := `Usage:
+	<command> <port>`
+
+	if len(os.Args) != 2 {
+		fmt.Println(usageMsg)
+		os.Exit(1)
+	}
+
+	// 引数が数値じゃない場合など、デフォルトのポートは8080
+	port := os.Args[1]
+	_, err := strconv.Atoi(port)
+	if err != nil {
+		port = "8080"
+	}
+
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
 	fmt.Println(currentTime(), "start!!")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func currentTime() string {
