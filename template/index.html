@@ -27,7 +27,7 @@
     }
 
     h3 {
-      color: rgb(33, 119, 218);
+      color: rgb({{.H3Color}});
       font-size: 24px;
       margin: 20px 0 0 20px;
     }
@@ -53,6 +53,10 @@
       <h3>Current Time</h3>
       <p>{{.Time}}</p>
     </div>
+    <div class="card">
+      <h3>Access Count</h3>
+      <p>{{.Counter}}</p>
+    </div>
 
     {{if .Name -}}
       <div class="card">
@@ -65,7 +69,6 @@
       <h3>Availability Zone</h3>
       <p>{{.AwsAz}}</p>
     </div>
-
     <div class="card">
       <h3>IP Addresses</h3>
       <p>{{.PrivateIps}}</p>
