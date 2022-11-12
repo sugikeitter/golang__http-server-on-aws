@@ -33,9 +33,11 @@ type EcsTaskMeta struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	counter++
+	fmt.Println(currentTime(), "Count:", counter, "IP:", r.RemoteAddr)
 	result := Result{
 		Time:       currentTime(),
-		Counter:    count(),
+		Counter:    counter,
 		Name:       r.FormValue("name"),
 		PrivateIps: privateIps,
 		AwsAz:      awsAz,
@@ -46,10 +48,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func handleIcon(w http.ResponseWriter, r *http.Request) {}
 
+// TODO logger
 func main() {
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
-	fmt.Println(currentTime(), " start!!")
+	fmt.Println(currentTime(), "start!!")
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -87,13 +90,13 @@ func awsAzFromMetadata() string {
 	resp, err := client.Get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
 	if err != nil {
 		// log
-		fmt.Println(currentTime(), " ERROR - http.get from IMDS")
+		fmt.Println(currentTime(), "ERROR - http.get from IMDS")
 		return "ERROR - http.get"
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(currentTime(), " ERROR - io.ReadAll from IMDS")
+		fmt.Println(currentTime(), "ERROR - io.ReadAll from IMDS")
 		return "ERROR - io.ReadAll"
 	}
 	return string(body[:])
@@ -106,7 +109,7 @@ func awsAzFromEcsMeta() string {
 	resp, err := client.Get(os.Getenv("ECS_CONTAINER_METADATA_URI_V4") + "/task")
 	if err != nil {
 		// log
-		fmt.Println(currentTime(), " ERROR - http.get from ECS_CONTAINER_METADATA_URI_V4")
+		fmt.Println(currentTime(), "ERROR - http.get from ECS_CONTAINER_METADATA_URI_V4")
 		return ""
 	}
 	defer resp.Body.Close()
@@ -114,14 +117,8 @@ func awsAzFromEcsMeta() string {
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(&ecsTaskMeta); err != nil {
 		// log
-		fmt.Println(currentTime(), " ERROR - Decode ECS_CONTAINER_METADATA_URI_V4")
+		fmt.Println(currentTime(), "ERROR - Decode ECS_CONTAINER_METADATA_URI_V4")
 		return ""
 	}
 	return ecsTaskMeta.AvailabilityZone
-}
-
-func count() int {
-	counter++
-	fmt.Println(currentTime(), " Count: ", counter)
-	return counter
 }
