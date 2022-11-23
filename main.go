@@ -17,8 +17,10 @@ import (
 var f embed.FS
 var tmpl, _ = template.ParseFS(f, "template/index.html")
 
-var privateIps = myPrivateIps()
-var awsAz = awsAzFromMetadata()
+var jst, _ = time.LoadLocation("Asia/Tokyo")
+
+var privateIps string
+var awsAz string
 var counter = 0
 
 type Result struct {
@@ -41,8 +43,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Time:       currentTime(),
 		Counter:    counter,
 		Name:       r.FormValue("name"),
-		PrivateIps: privateIps,
-		AwsAz:      awsAz,
+		PrivateIps: myPrivateIps(),
+		AwsAz:      awsAzFromMetadata(),
 		H3Color:    "33, 119, 218",
 	}
 	tmpl.Execute(w, result)
@@ -71,6 +73,9 @@ func main() {
 		port = "8080"
 	}
 
+	go myPrivateIps()
+	go awsAzFromMetadata()
+
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
 	http.HandleFunc("/health", handleHealth)
@@ -79,11 +84,14 @@ func main() {
 }
 
 func currentTime() string {
-	t := time.Now()
+	t := time.Now().In(jst)
 	return t.Format("2006/01/02 15:04:05.000")
 }
 
 func myPrivateIps() string {
+	if privateIps != "" {
+		return privateIps
+	}
 	netInterfaceAddresses, _ := net.InterfaceAddrs()
 
 	var ips []string
@@ -93,15 +101,20 @@ func myPrivateIps() string {
 			ips = append(ips, networkIp.IP.String())
 		}
 	}
-	return fmt.Sprintf("%s", ips)
+	privateIps = fmt.Sprintf("%s", ips)
+	return privateIps
 }
 
 // TODO IMDS v2
 func awsAzFromMetadata() string {
+	if awsAz != "" {
+		return awsAz
+	}
 	// ECS のメタデータから取得できれば利用する
 	// TODO `az != ""` で条件あってる？
 	if az := awsAzFromEcsMeta(); az != "" {
-		return az
+		awsAz = az
+		return awsAz
 	}
 	// TODO EKS の場合
 
@@ -113,15 +126,18 @@ func awsAzFromMetadata() string {
 	if err != nil {
 		// log
 		fmt.Println(currentTime(), "ERROR - http.get from IMDS")
-		return "ERROR - http.get"
+		awsAz = "ERROR - http.get"
+		return awsAz
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(currentTime(), "ERROR - io.ReadAll from IMDS")
-		return "ERROR - io.ReadAll"
+		awsAz = "ERROR - io.ReadAll"
+		return awsAz
 	}
-	return string(body[:])
+	awsAz = string(body[:])
+	return awsAz
 }
 
 func awsAzFromEcsMeta() string {
