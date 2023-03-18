@@ -72,9 +72,11 @@ func main() {
 		port = "8080"
 	}
 	// 色を環境変数から取得
-	h3Color, ok := os.LookupEnv("H3_COLOR")
+	val, ok := os.LookupEnv("H3_COLOR")
 	if !ok {
 		h3Color = "33, 119, 218" // Default Blue
+	} else {
+		h3Color = val
 	}
 
 	go myPrivateIps()
