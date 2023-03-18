@@ -16,9 +16,8 @@ import (
 //go:embed template
 var f embed.FS
 var tmpl, _ = template.ParseFS(f, "template/index.html")
-
 var jst, _ = time.LoadLocation("Asia/Tokyo")
-
+var h3Color string
 var privateIps string
 var awsAz string
 var counter = 0
@@ -45,7 +44,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Name:       r.FormValue("name"),
 		PrivateIps: myPrivateIps(),
 		AwsAz:      awsAzFromMetadata(),
-		H3Color:    "33, 119, 218",
+		H3Color:    h3Color,
 	}
 	tmpl.Execute(w, result)
 }
@@ -71,6 +70,11 @@ func main() {
 	_, err := strconv.Atoi(port)
 	if err != nil {
 		port = "8080"
+	}
+	// 色を環境変数から取得
+	h3Color, ok := os.LookupEnv("H3_COLOR")
+	if !ok {
+		h3Color = "33, 119, 218" // Default Blue
 	}
 
 	go myPrivateIps()
