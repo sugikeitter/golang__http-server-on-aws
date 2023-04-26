@@ -128,6 +128,7 @@ func awsAzFromMetadata() string {
 	client := http.Client{
 		Timeout: 1 * time.Second,
 	}
+	// TODO IMDS v2 の場合 err はなく空文字が返る
 	resp, err := client.Get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
 	if err != nil {
 		// log
