@@ -161,6 +161,11 @@ func awsAzFromEc2MetaV2(client http.Client) (string, error) {
 	tokenReq, err := http.NewRequest("PUT", "http://169.254.169.254/latest/api/token", nil)
 	tokenReq.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", "120")
 	tokenResp, err := client.Do(tokenReq)
+	if err != nil {
+		// log
+		fmt.Println(currentTime(), "ERROR - http.get from IMDSv2 token")
+		return "", err
+	}
 	defer tokenResp.Body.Close()
 	tokenRespBody, err := io.ReadAll(tokenResp.Body)
 	if err != nil {
