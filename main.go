@@ -26,9 +26,10 @@ type Result struct {
 	Time       string
 	Counter    int
 	Name       string
-	PrivateIps string
 	AwsAz      string
+	PrivateIps string
 	H3Color    string
+	Message    string
 }
 
 type EcsTaskMeta struct {
@@ -42,8 +43,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Time:       currentTime(),
 		Counter:    counter,
 		Name:       r.FormValue("name"),
-		PrivateIps: myPrivateIps(),
 		AwsAz:      awsAzFromMetadata(),
+		PrivateIps: myPrivateIps(),
+		Message:    "Hello, World!",
 		H3Color:    h3Color,
 	}
 	tmpl.Execute(w, result)

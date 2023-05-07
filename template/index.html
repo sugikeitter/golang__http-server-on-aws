@@ -59,10 +59,10 @@
     </div>
 
     {{if .Name -}}
-      <div class="card">
-        <h3>Your Name</h3>
-        <p>{{.Name}}</p>
-      </div>
+    <div class="card">
+      <h3>Your Name</h3>
+      <p>{{.Name}}</p>
+    </div>
     {{end}}
 
     <div class="card">
@@ -72,6 +72,10 @@
     <div class="card">
       <h3>IP Addresses</h3>
       <p>{{.PrivateIps}}</p>
+    </div>
+    <div class="card">
+      <h3>Message</h3>
+      <p>{{.Message}}</p>
     </div>
 </body>
 </html>
