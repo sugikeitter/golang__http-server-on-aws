@@ -39,7 +39,7 @@ jobs:
       continue-on-error: true
     
     - name: Push
-      if: steps.check.outcome == 'success'
+      if: ${{ steps.check.outcome == 'success' && github.event_name == 'push' }}
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
@@ -48,16 +48,19 @@ jobs:
         git push
 
     - name: Configure AWS credentials
+      if: github.event_name == 'push'
       uses: aws-actions/configure-aws-credentials@v1
       with:
         role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Login to Amazon ECR
+      if: github.event_name == 'push'
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build, tag, and push image to Amazon ECR
+      if: github.event_name == 'push'
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
