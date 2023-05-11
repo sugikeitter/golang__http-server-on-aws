@@ -77,8 +77,8 @@ func main() {
 	val, ok := os.LookupEnv("H3_COLOR")
 	if !ok {
 		h3Color = "33, 119, 218" // Default Blue
-		//h3Color = "63, 177, 12" // Default Gleen
-		//h3Color = "248, 52, 0" // Default Red
+		// h3Color = "63, 177, 12" // Default Gleen
+		// h3Color = "248, 52, 0" // Default Red
 	} else {
 		h3Color = val
 	}
