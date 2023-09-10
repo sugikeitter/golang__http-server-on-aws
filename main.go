@@ -139,8 +139,10 @@ func awsAzFromMetadata() string {
 	}
 	// IMDS v2 Only で設定されている場合 err はなく空文字が返る
 	az, _ := awsAzFromEc2MetaV2(client)
-	awsAz = az
-	return az
+	if len(az) <= 15 {
+		awsAz = az
+	}
+	return awsAz
 }
 
 func awsAzFromEc2MetaV1(client http.Client) (string, error) {
