@@ -18,10 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.2
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5.0.0
       with:
         go-version: 1.18
 
@@ -49,7 +49,7 @@ jobs:
 
     - name: Configure AWS credentials
       if: github.event_name == 'push'
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}
         aws-region: ${{ secrets.AWS_REGION }}
@@ -57,7 +57,7 @@ jobs:
     - name: Login to Amazon ECR
       if: github.event_name == 'push'
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
       if: github.event_name == 'push'
@@ -73,4 +73,4 @@ jobs:
         docker tag $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
         docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG
         docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
-        echo "::set-output name=image::$ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG"
+        echo "name=image::$ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG" > $GITHUB_OUTPUT
