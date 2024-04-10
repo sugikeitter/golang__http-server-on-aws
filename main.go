@@ -152,6 +152,10 @@ func awsAzFromEc2MetaV1(client http.Client) (string, error) {
 		fmt.Println(currentTime(), "ERROR - http.get from IMDSv1")
 		return "", err
 	}
+	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
+		fmt.Println(currentTime(), "WARN - http.get response from IMDSv1 is not 2xx")
+		return "", nil
+	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -197,12 +201,25 @@ func awsAzFromEc2MetaV2(client http.Client) (string, error) {
 }
 
 func awsAzFromEcsMeta(client http.Client) (string, error) {
-	resp, err := client.Get(os.Getenv("ECS_CONTAINER_METADATA_URI_V4") + "/task")
+	val, ok := os.LookupEnv("ECS_CONTAINER_METADATA_URI_V4")
+	if !ok {
+		// log
+		fmt.Println(currentTime(), "WARN - env ECS_CONTAINER_METADATA_URI_V4 is not found")
+		return "", nil
+	}
+	
+	resp, err := client.Get(val + "/task")
 	if err != nil {
 		// log
 		fmt.Println(currentTime(), "ERROR - http.get from ECS_CONTAINER_METADATA_URI_V4")
 		return "", err
 	}
+
+	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
+		fmt.Println(currentTime(), "WARN - http.get response from ECS_CONTAINER_METADATA_URI_V4 is not 2xx")
+		return "", nil
+	}
+	
 	defer resp.Body.Close()
 	var ecsTaskMeta EcsTaskMeta
 	dec := json.NewDecoder(resp.Body)
