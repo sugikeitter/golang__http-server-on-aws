@@ -17,6 +17,7 @@ import (
 var f embed.FS
 var tmpl, _ = template.ParseFS(f, "template/index.html")
 var jst, _ = time.LoadLocation("Asia/Tokyo")
+var message string
 var h3Color string
 var privateIps string
 var awsAz string
@@ -45,7 +46,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Name:       r.FormValue("name"),
 		AwsAz:      awsAzFromMetadata(),
 		PrivateIps: myPrivateIps(),
-		Message:    "Hello, World!",
+		Message:    message,
 		H3Color:    h3Color,
 	}
 	tmpl.Execute(w, result)
@@ -73,14 +74,22 @@ func main() {
 	if err != nil {
 		port = "8080"
 	}
+
+	msgVal, msgExists := os.LookupEnv("MESSAGE")
+	if !msgExists {
+		message = "Hello, World!"
+	} else {
+		message = msgVal
+	}
+
 	// 色を環境変数から取得
-	val, ok := os.LookupEnv("H3_COLOR")
-	if !ok {
+	colorVal, colorExists := os.LookupEnv("H3_COLOR")
+	if !colorExists {
 		h3Color = "33, 119, 218" // Default Blue
 		// h3Color = "63, 177, 12" // Default Gleen
 		// h3Color = "248, 52, 0" // Default Red
 	} else {
-		h3Color = val
+		h3Color = colorVal
 	}
 	// TODO template に文字を書ける場所を用意
 
