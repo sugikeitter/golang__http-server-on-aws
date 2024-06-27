@@ -93,9 +93,13 @@ func main() {
 	}
 	// TODO template に文字を書ける場所を用意
 
-	go myPrivateIps()
-	go awsAzFromMetadata()
-
+	kubePort, kubePortExists := os.LookupEnv("KUBERNETES_PORT")
+	if !kubePortExists {
+		// TODO
+	} else {
+		go myPrivateIps()
+		go awsAzFromMetadata()
+	}
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
 	http.HandleFunc("/health", handleHealth)
