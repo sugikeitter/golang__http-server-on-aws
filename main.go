@@ -93,13 +93,9 @@ func main() {
 	}
 	// TODO template に文字を書ける場所を用意
 
-	kubePort, kubePortExists := os.LookupEnv("KUBERNETES_PORT")
-	if !kubePortExists {
-		// TODO
-	} else {
-		go myPrivateIps()
-		go awsAzFromMetadata()
-	}
+	go myPrivateIps()
+	go awsAzFromMetadata()
+
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", handleIcon)
 	http.HandleFunc("/health", handleHealth)
@@ -116,16 +112,25 @@ func myPrivateIps() string {
 	if privateIps != "" {
 		return privateIps
 	}
-	netInterfaceAddresses, _ := net.InterfaceAddrs()
 
-	var ips []string
-	for _, netInterfaceAddress := range netInterfaceAddresses {
-		networkIp, ok := netInterfaceAddress.(*net.IPNet)
-		if ok && !networkIp.IP.IsLoopback() && networkIp.IP.To4() != nil {
-			ips = append(ips, networkIp.IP.String())
+	// If You want to get pod IP and node IP, you set env in your k8s manifest file when this process is on k8s.
+	_, kubePortExists := os.LookupEnv("KUBERNETES_PORT") // k8s pod has this env value by default.
+	if kubePortExists {
+		podIp, _ := os.LookupEnv("MY_POD_IP")   // set your k8s manifest
+		nodeIp, _ := os.LookupEnv("MY_NODE_IP") // set your k8s manifest
+		privateIps = fmt.Sprintf("[%s, %s]", podIp, nodeIp)
+	} else {
+		netInterfaceAddresses, _ := net.InterfaceAddrs()
+
+		var ips []string
+		for _, netInterfaceAddress := range netInterfaceAddresses {
+			networkIp, ok := netInterfaceAddress.(*net.IPNet)
+			if ok && !networkIp.IP.IsLoopback() && networkIp.IP.To4() != nil {
+				ips = append(ips, networkIp.IP.String())
+			}
 		}
+		privateIps = fmt.Sprintf("%s", ips)
 	}
-	privateIps = fmt.Sprintf("%s", ips)
 	return privateIps
 }
 
@@ -143,72 +148,53 @@ func awsAzFromMetadata() string {
 		awsAz = az
 		return az
 	}
-	// TODO EKS の場合？
+	// TODO EKS Fargate
 
-	// EC2 インスタンス
-	if az, _ := awsAzFromEc2MetaV1(client); az != "" {
+	// EC2 インスタンス or EKS on EC2
+	// EKS を使用している場合、IMDS v2 のホップは 2 以上が必要
+	if az, _ := awsAzFromEc2MetaV2(client); az != "" {
 		awsAz = az
 		return az
 	}
-	// IMDS v2 Only で設定されている場合 err はなく空文字が返る
-	az, _ := awsAzFromEc2MetaV2(client)
-	if len(az) <= 15 {
-		awsAz = az
-	}
+
 	return awsAz
 }
 
-func awsAzFromEc2MetaV1(client http.Client) (string, error) {
-	resp, err := client.Get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
-	if err != nil {
-		// log
-		fmt.Println(currentTime(), "ERROR - http.get from IMDSv1")
-		return "", err
-	}
-	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
-		fmt.Println(currentTime(), "WARN - http.get response from IMDSv1 is not 2xx")
-		return "", nil
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(currentTime(), "ERROR - io.ReadAll from IMDSv1")
-		return "", err
-	}
-	return string(body[:]), nil
-}
-
 func awsAzFromEc2MetaV2(client http.Client) (string, error) {
-	tokenReq, err := http.NewRequest("PUT", "http://169.254.169.254/latest/api/token", nil)
+	tokenReq, _ := http.NewRequest("PUT", "http://169.254.169.254/latest/api/token", nil)
 	tokenReq.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", "120")
 	tokenResp, err := client.Do(tokenReq)
 	if err != nil {
 		// log
 		fmt.Println(currentTime(), "ERROR - http.get from IMDSv2 token")
-		return "", err
+		return "-", err
 	}
 	defer tokenResp.Body.Close()
 	tokenRespBody, err := io.ReadAll(tokenResp.Body)
 	if err != nil {
 		fmt.Println(currentTime(), "ERROR - io.ReadAll from IMDSv2 token")
-		return "", err
+		return "-", err
 	}
 	imdsV2Token := string(tokenRespBody[:])
 
 	// IMDS v2 で AZ 取得
-	req, err := http.NewRequest("GET", "http://169.254.169.254/latest/meta-data/placement/availability-zone", nil)
+	req, _ := http.NewRequest("GET", "http://169.254.169.254/latest/meta-data/placement/availability-zone", nil)
 	req.Header.Add("X-aws-ec2-metadata-token", imdsV2Token)
 	resp, err := client.Do(req)
 	if err != nil {
 		// log
 		fmt.Println(currentTime(), "ERROR - http.get from IMDSv2")
-		return "", err
+		return "-", err
+	}
+	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
+		fmt.Println(currentTime(), "WARN - http.get response from IMDSv1 is not 2xx")
+		return "-", nil
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(currentTime(), "ERROR - io.ReadAll from IMDS")
-		return "", err
+		return "-", err
 	}
 	return string(body[:]), nil
 }
@@ -220,7 +206,7 @@ func awsAzFromEcsMeta(client http.Client) (string, error) {
 		fmt.Println(currentTime(), "WARN - env ECS_CONTAINER_METADATA_URI_V4 is not found")
 		return "", nil
 	}
-	
+
 	resp, err := client.Get(val + "/task")
 	if err != nil {
 		// log
@@ -232,7 +218,7 @@ func awsAzFromEcsMeta(client http.Client) (string, error) {
 		fmt.Println(currentTime(), "WARN - http.get response from ECS_CONTAINER_METADATA_URI_V4 is not 2xx")
 		return "", nil
 	}
-	
+
 	defer resp.Body.Close()
 	var ecsTaskMeta EcsTaskMeta
 	dec := json.NewDecoder(resp.Body)
