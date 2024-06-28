@@ -187,7 +187,7 @@ func awsAzFromEc2MetaV2(client http.Client) (string, error) {
 		return "-", err
 	}
 	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
-		fmt.Println(currentTime(), "WARN - http.get response from IMDSv1 is not 2xx")
+		fmt.Println(currentTime(), "WARN - http.get response from IMDSv2 is ", resp.StatusCode)
 		return "-", nil
 	}
 	defer resp.Body.Close()
