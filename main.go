@@ -149,6 +149,7 @@ func awsAzFromMetadata() string {
 		return az
 	}
 	// TODO EKS Fargate
+	// The Amazon EC2 instance metadata service (IMDS) isn't available to Pods that are deployed to Fargate nodes. (https://docs.aws.amazon.com/eks/latest/userguide/fargate.html)
 
 	// EC2 インスタンス or EKS on EC2
 	// EKS を使用している場合、IMDS v2 のホップは 2 以上が必要
